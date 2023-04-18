@@ -1,5 +1,4 @@
 from typing import Callable
-from inspect import signature
 from tqdm import trange
 
 import matplotlib.pyplot as plt
@@ -21,24 +20,6 @@ class ModelEDP:
         else:
             raise ValueError("delta_t doit être strictement positif")
 
-        """try:
-            sig_u0 = signature(u0)
-            if len(sig_u0.parameters) == 1:
-                self.u0 = u0
-            else:
-                raise TypeError
-        except TypeError:
-            raise TypeError("u0 est une fonction d'une variable (x)")
-
-        try:
-            sig_a = signature(a)
-            if len(sig_a.parameters) == 2:
-                self.a = a
-            else:
-                raise TypeError
-        except TypeError:
-            raise TypeError("a est une fonction de deux variables (t, x)")
-"""
 
         if abs(u0(0) - u0(1)) < 1e-9:
             self.u0 = u0
@@ -150,7 +131,6 @@ class ModelEDP_a_cst(ModelEDP):
     def graph_3d(self):
         les_t, les_x, U = self.solve_numpy()
 
-        #T, X = np.meshgrid(les_t, les_x)
         X, T = np.meshgrid(les_x, les_t)
 
         #U_theo = self.u0(X - self.a * T) #TODO : make it work even for non numpy function
@@ -173,3 +153,13 @@ class ModelEDP_a_cst(ModelEDP):
             t = les_t[ind_k]
             plt.plot(les_x, U[ind_k], label=f"u({t},*)")
         plt.show()
+
+    def images_2d(self):
+        les_t, les_x, U = self.solve_numpy()
+
+        for n, t in enumerate(les_t):
+            plt.clf()
+            plt.plot(les_x, U[n])
+            print(f"saving file {n=}")
+            plt.savefig(f"./images/graphe_{n}.png")
+
