@@ -1,10 +1,13 @@
 from typing import Callable
-from tqdm import trange
+from tqdm import trange, tqdm
+from time import sleep
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
+import os
+import imageio
 
 class ModelEDP:
 
@@ -12,7 +15,7 @@ class ModelEDP:
                  u0: Callable,
                  a: Callable,
                  J: int = 10 ** 3,
-                 delta_t: float = 10 ** -3,
+                 delta_t: float = 10 ** -4,
                  N: int = 10 ** 3,
                  ):
         if delta_t > 0:
@@ -78,7 +81,7 @@ class ModelEDP_a_cst(ModelEDP):
                  a: float,
                  J: int = 10 ** 3,
                  delta_t: float = 10 ** -4,
-                 N: int = 3 * 10 ** 3):
+                 N: int = 3 * 10 ** 4):
 
         super().__init__(u0, lambda t, x: a, J, delta_t, N)
         self.a = a
@@ -119,7 +122,7 @@ class ModelEDP_a_cst(ModelEDP):
         for j, x in enumerate(self.X):
             U[0, j] = self.u0(x)
 
-        for n in trange(1, self.N):
+        for n in trange(1, self.N, desc="Calcul des U_n_j"):
             for j in range(self.J):
                 U[n, j] = U[n-1, j] - self.a * dt / dx * (U[n-1, j] - U[n-1, j-1])
             #print(max(U[n]))
@@ -157,9 +160,31 @@ class ModelEDP_a_cst(ModelEDP):
     def images_2d(self):
         les_t, les_x, U = self.solve_numpy()
 
-        for n, t in enumerate(les_t):
+        if not os.path.isdir("./images"):
+            print("making dir")
+            sleep(.1)
+            os.makedirs("images")
+
+
+        for n, t in tqdm(enumerate(les_t), total=len(les_t), desc="Sauvegarde des graphes"):
             plt.clf()
             plt.plot(les_x, U[n])
-            print(f"saving file {n=}")
             plt.savefig(f"./images/graphe_{n}.png")
 
+        images_to_gif(int(1/np.sqrt(self.delta_t)))
+
+
+def images_to_gif(fps:int, path:str = "images"):
+    ls = sorted(os.listdir(path))
+    images = []
+
+    for file in tqdm(ls, "Chargement des images"):
+        image = imageio.v2.imread("./" + path + "/" + file)
+        images.append(image)
+
+
+    imageio.mimsave("graph.gif", images)
+
+
+if __name__ == "__main__":
+    images_to_gif(50)
