@@ -40,7 +40,10 @@ class ModelEDP:
             raise TypeError("a est une fonction de deux variables (t, x)")
 """
 
-        self.u0 = u0
+        if abs(u0(0) - u0(1)) < 1e-9:
+            self.u0 = u0
+        else:
+            raise ValueError("u0 doit être 1-périodique")
         self.a = a
 
         self.N = N
@@ -89,7 +92,12 @@ class ModelEDP:
 
 class ModelEDP_a_cst(ModelEDP):
 
-    def __init__(self, u0: Callable, a: float, J: int = 10 ** 3, delta_t: float = 10 ** -3, N: int = 10 ** 3):
+    def __init__(self,
+                 u0: Callable,
+                 a: float,
+                 J: int = 10 ** 3,
+                 delta_t: float = 10 ** -4,
+                 N: int = 3 * 10 ** 3):
 
         super().__init__(u0, lambda t, x: a, J, delta_t, N)
         self.a = a
@@ -122,31 +130,46 @@ class ModelEDP_a_cst(ModelEDP):
         dx = 1 / self.J
         dt = self.delta_t
 
-        X = np.array([(j + 1 / 2) * dx for j in range(self.J)])
-        T = np.array([n * dt for n in range(self.N)])
+        self.X = np.array([(j + 1 / 2) * dx for j in range(self.J)])
+        self.T = np.array([n * dt for n in range(self.N)])
 
-        U = np.zeros((self.N, self.J))
+        U = np.zeros((self.N, self.J), dtype="float128")
 
-        for j, x in enumerate(X):
+        for j, x in enumerate(self.X):
             U[0, j] = self.u0(x)
 
         for n in trange(1, self.N):
             for j in range(self.J):
                 U[n, j] = U[n-1, j] - self.a * dt / dx * (U[n-1, j] - U[n-1, j-1])
+            #print(max(U[n]))
+            m = max(U[n])
 
-        return T, X, U
+        self.U = U
+        return self.T, self.X, U
 
     def graph_3d(self):
         les_t, les_x, U = self.solve_numpy()
 
-        T, X = np.meshgrid(les_t, les_x)
+        #T, X = np.meshgrid(les_t, les_x)
+        X, T = np.meshgrid(les_x, les_t)
 
-        U_theo = self.u0(X - self.a * T)
+        #U_theo = self.u0(X - self.a * T) #TODO : make it work even for non numpy function
 
         fig = plt.figure()
         ax = Axes3D(fig)
         ax.plot_surface(T, X, U)
-        ax.plot_surface(T, X, U_theo)
+        #ax.plot_surface(T, X, U_theo)
         plt.xlabel('t')
         plt.ylabel('x')
+        plt.show()
+
+    def graph_2d(self, nb_droites: int = 4):
+        """Graphe de u(t,.) pour t fixé"""
+        les_t, les_x, U = self.solve_numpy()
+
+        ind_quantile = int(self.N / (nb_droites + 1))
+        for k in range(nb_droites):
+            ind_k = k * ind_quantile
+            t = les_t[ind_k]
+            plt.plot(les_x, U[ind_k], label=f"u({t},*)")
         plt.show()
