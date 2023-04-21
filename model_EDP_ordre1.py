@@ -79,9 +79,9 @@ class ModelEDP_a_cst(ModelEDP):
     def __init__(self,
                  u0: Callable,
                  a: float,
-                 J: int = 10 ** 3,
+                 J: int = 10 ** 4,
                  delta_t: float = 10 ** -4,
-                 N: int = 3 * 10 ** 4):
+                 N: int = 3 * 10 ** 3):
 
         super().__init__(u0, lambda t, x: a, J, delta_t, N)
         self.a = a
@@ -172,6 +172,13 @@ class ModelEDP_a_cst(ModelEDP):
             plt.savefig(f"./images/graphe_{n}.png")
 
         images_to_gif(int(1/np.sqrt(self.delta_t)))
+
+    def heat_map_2d(self):
+        les_t, les_x, U = self.solve_numpy()
+
+        plt.imshow(U, cmap='seismic')
+        plt.colorbar()
+        plt.plot()
 
 
 def images_to_gif(fps:int, path:str = "images"):
