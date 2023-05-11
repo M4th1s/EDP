@@ -9,19 +9,22 @@ import numpy as np
 import os
 import imageio
 
-class ModelEDP:
+class ModelEDP():
 
     def __init__(self,
                  u0: Callable,
-                 a: Callable,
+                 a: float,
                  J: int = 10 ** 3,
-                 delta_t: float = 10 ** -5,
+                 #delta_t: float = 10 ** -5,
                  N: int = 10 ** 3,
+                 clf: float = .9,
                  ):
-        if delta_t > 0:
-            self.delta_t = delta_t
+
+
+        if clf > 0:
+            self.delta_t = clf / a / J
         else:
-            raise ValueError("delta_t doit être strictement positif")
+            raise ValueError("clf doit être strictement positif")
 
 
         if abs(u0(0) - u0(1)) < 1e-9:
@@ -36,55 +39,6 @@ class ModelEDP:
             self.J = J
         else:
             raise ValueError("J doit être strictement positif")
-
-    def solve(self) -> (list[float], list[float], list[list[float]]):
-        dx = 1 / self.J
-        les_x = [(j + 1 / 2) * dx for j in range(self.J)]
-
-        dt = self.delta_t
-        les_t = [n * dt for n in range(self.N)]
-
-        les_u_0_j = [self.u0(x) for x in les_x]
-        les_u_n = [les_u_0_j]
-
-        for n in trange(1, self.N):
-            u_prec = les_u_n[-1]  # u_n-1
-            u_n_0 = u_prec[0] - self.a(les_t[n], les_x[0]) * dt / dx * (u_prec[0] - u_prec[-1])
-            u_n = [u_n_0]
-
-            for j in range(1, self.J):
-                u_n_j = u_prec[j] - self.a(les_t[n], les_x[j]) * dt / dx * (u_prec[j] - u_prec[j-1])
-                u_n.append(u_n_j)
-
-            les_u_n.append(u_n)
-
-        return les_t, les_x, les_u_n
-
-    def graph_3d(self):
-        les_t, les_x, les_u_n = self.solve()
-
-        T, X = np.meshgrid(les_t, les_x)
-        U = np.matrix(les_u_n)
-
-        fig = plt.figure()
-        ax = Axes3D(fig)
-        ax.plot_surface(T, X, U)
-        plt.xlabel('t')
-        plt.ylabel('x')
-        plt.show()
-
-
-class ModelEDP_a_cst(ModelEDP):
-
-    def __init__(self,
-                 u0: Callable,
-                 a: float,
-                 J: int = 10 ** 4,
-                 delta_t: float = 10 ** -4,
-                 N: int = 3 * 10 ** 4):
-
-        super().__init__(u0, lambda t, x: a, J, delta_t, N)
-        self.a = a
 
 
 
