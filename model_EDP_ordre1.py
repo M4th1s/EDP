@@ -13,24 +13,21 @@ class ModelEDP():
 
     def __init__(self,
                  u0: Callable,
-                 a: float,
+                 a: float = 1,
                  J: int = 10 ** 3,
                  #delta_t: float = 10 ** -5,
                  N: int = 10 ** 3,
-                 clf: float = .9,
+                 cfl: float = .9, #Courant–Friedrichs–Lewy
                  ):
 
 
-        if clf > 0:
-            self.delta_t = clf / a / J
+        if cfl > 0:
+            self.delta_t = cfl / a / J
         else:
-            raise ValueError("clf doit être strictement positif")
+            raise ValueError("cfl doit être strictement positif")
 
 
-        if abs(u0(0) - u0(1)) < 1e-9:
-            self.u0 = u0
-        else:
-            raise ValueError("u0 doit être 1-périodique")
+        self.u0 = u0
         self.a = a
 
         self.N = N
@@ -126,12 +123,13 @@ class ModelEDP():
         images_to_gif(int(1/np.sqrt(self.delta_t)))
 
     def heat_map_2d(self):
-        les_t, les_x, U = self.results()
+        les_t, les_x, U = self.solve()
 
         plt.imshow(U, cmap='seismic')
         plt.colorbar()
-        plt.plot()
-
+        #plt.plot()
+        plt.savefig("plot.png")
+        print("Done")
 
 def images_to_gif(fps:int, path:str = "images"):
     ls = sorted(os.listdir(path))

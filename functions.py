@@ -19,11 +19,8 @@ def carre(X: float | ndarray):
     return (X - 1/2) ** 2
 
 
-def triangle(x: float):
-    if x <= 1/2:
-        return x
-    else:
-        return 1 - x
+def triangle(X: float | ndarray):
+    return abs(X - 1/2)
 
 
 def inv_triangle(x: float):
